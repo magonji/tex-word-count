@@ -1,0 +1,59 @@
+{
+  "name": "tex-word-count",
+  "displayName": "TeX Word Count",
+  "description": "Counts the words in a LaTeX file (ignoring commands and comments) and shows the total in the status bar.",
+  "version": "0.2.0",
+  "publisher": "MarioGonzalez-Jimenez",
+  "license": "MIT",
+  "icon": "icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/magonji/tex-word-count.git"
+  },
+  "bugs": {
+    "url": "https://github.com/magonji/tex-word-count/issues"
+  },
+  "homepage": "https://github.com/magonji/tex-word-count#readme",
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "latex",
+    "tex",
+    "word count",
+    "status bar"
+  ],
+  "activationEvents": [
+    "onLanguage:latex"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "texWordCount.showCount",
+        "title": "TeX Word Count: Show Word Count"
+      }
+    ],
+    "configuration": {
+      "title": "TeX Word Count",
+      "properties": {
+        "texWordCount.countBracedArguments": {
+          "type": "boolean",
+          "default": true,
+          "description": "Count the text inside command braces (for example, the title in \\section{...})."
+        },
+        "texWordCount.showCharacters": {
+          "type": "boolean",
+          "default": true,
+          "description": "Also show a character count (without spaces) alongside the word count in the status bar."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "test": "node ./test/wordcount.test.js"
+  }
+}
