@@ -2,7 +2,7 @@
   "name": "tex-word-count",
   "displayName": "TeX Word Count",
   "description": "Counts the words in a LaTeX file (ignoring commands and comments) and shows the total in the status bar.",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "publisher": "MarioGonzalez-Jimenez",
   "license": "MIT",
   "icon": "icon.png",
