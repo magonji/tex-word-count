@@ -110,6 +110,17 @@ test('analyse returns both counts from one pass', () => {
   });
 });
 
+test('ignores comment environment when requested', () => {
+  const src = 'before \\begin{comment}\nhidden words here\n\\end{comment} after';
+  assert.strictEqual(countWords(src, { ignoreCommentEnvironment: true }), 2);
+});
+
+test('keeps comment environment contents by default (selection mode)', () => {
+  const src = 'before \\begin{comment}\nhidden words here\n\\end{comment} after';
+  // \begin/\end are stripped as non-text commands, leaving the inner words.
+  assert.strictEqual(countWords(src), 5);
+});
+
 test('stripComment leaves escaped percent alone', () => {
   assert.strictEqual(stripComment('100\\% done % note'), '100\\% done ');
 });

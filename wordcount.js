@@ -64,6 +64,8 @@ function stripComment(line) {
  * @param {object} [options]
  * @param {boolean} [options.countBracedArguments=true]  When true, text inside
  *        the braces of text commands (such as `\section{...}`) is kept.
+ * @param {boolean} [options.ignoreCommentEnvironment=false]  When true, the
+ *        contents of `\begin{comment}...\end{comment}` blocks are removed.
  * @returns {string}
  */
 function cleanLatex(text, options = {}) {
@@ -74,6 +76,14 @@ function cleanLatex(text, options = {}) {
     .split(/\r?\n/)
     .map(stripComment)
     .join('\n');
+
+  // 1b. Optionally remove `comment` environments (from the `comment` package).
+  if (options.ignoreCommentEnvironment) {
+    cleaned = cleaned.replace(
+      /\\begin\{comment\}[\s\S]*?\\end\{comment\}/g,
+      ' '
+    );
+  }
 
   // 2. Remove verbatim and code environments (their contents are not words).
   cleaned = cleaned.replace(

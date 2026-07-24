@@ -1,5 +1,12 @@
 # Change Log
 
+## 0.3.0
+
+- Ignore the contents of `\begin{comment}...\end{comment}` blocks in the
+  document count (they are still counted when they fall inside an explicit
+  selection).
+- Updated the extension icon.
+
 ## 0.2.0
 
 - Added a character count (without spaces) alongside the word count, with a

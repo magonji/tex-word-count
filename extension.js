@@ -56,7 +56,12 @@ function updateStatusBar() {
 
   const options = getOptions();
   const { text, isSelection } = getTextToCount(editor);
-  const { words, characters } = analyse(text, options);
+  // Only strip \begin{comment}...\end{comment} blocks when counting the whole
+  // document, not when counting an explicit selection.
+  const { words, characters } = analyse(text, {
+    ...options,
+    ignoreCommentEnvironment: !isSelection,
+  });
 
   const parts = [`${words} ${words === 1 ? 'word' : 'words'}`];
   if (options.showCharacters) {
@@ -91,7 +96,10 @@ function activate(context) {
         return;
       }
       const { text, isSelection } = getTextToCount(editor);
-      const { words, characters } = analyse(text, getOptions());
+      const { words, characters } = analyse(text, {
+        ...getOptions(),
+        ignoreCommentEnvironment: !isSelection,
+      });
       const scope = isSelection ? 'The selection' : 'This LaTeX document';
       vscode.window.showInformationMessage(
         `${scope} has ${words} ${words === 1 ? 'word' : 'words'} ` +

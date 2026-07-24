@@ -16,6 +16,8 @@ actually written.
 - Ignores comments (anything after an unescaped `%`).
 - Ignores mathematics (`$…$`, `$$…$$`, `\[…\]`, `\(…\)`) and verbatim
   environments.
+- Ignores the contents of `\begin{comment}...\end{comment}` blocks in the
+  document count. (They are still counted if they fall inside a selection.)
 - Counts the text inside command braces (for example the title in
   `\section{Introduction}`). This can be turned off.
 - Click the status bar item, or run **TeX Word Count: Show Word Count** from
