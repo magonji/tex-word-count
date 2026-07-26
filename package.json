@@ -2,7 +2,7 @@
   "name": "tex-word-count",
   "displayName": "TeX Word Count",
   "description": "Counts the words in a LaTeX file (ignoring commands and comments) and shows the total in the status bar.",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "publisher": "MarioGonzalez-Jimenez",
   "license": "MIT",
   "icon": "icon.png",
@@ -35,6 +35,18 @@
       {
         "command": "texWordCount.showCount",
         "title": "TeX Word Count: Show Word Count"
+      },
+      {
+        "command": "texWordCount.setMarkerInterval",
+        "title": "TeX Word Count: Set Progress Marker Interval"
+      },
+      {
+        "command": "texWordCount.toggleMarkers",
+        "title": "TeX Word Count: Toggle Progress Markers"
+      },
+      {
+        "command": "texWordCount.showMenu",
+        "title": "TeX Word Count: Show Menu"
       }
     ],
     "configuration": {
@@ -49,6 +61,17 @@
           "type": "boolean",
           "default": true,
           "description": "Also show a character count (without spaces) alongside the word count in the status bar."
+        },
+        "texWordCount.progressMarkers.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show a faint marker in the editor at every milestone of the running word count."
+        },
+        "texWordCount.progressMarkers.interval": {
+          "type": "number",
+          "default": 250,
+          "minimum": 1,
+          "description": "Number of words between progress markers."
         }
       }
     }

@@ -56,6 +56,17 @@ function stripComment(line) {
 }
 
 /**
+ * Replaces a matched chunk with whitespace of exactly the same length, keeping
+ * newlines in place. Used when the caller needs the cleaned text to line up,
+ * character for character, with the original document.
+ * @param {string} match
+ * @returns {string}
+ */
+function blank(match) {
+  return match.replace(/[^\n]/g, ' ');
+}
+
+/**
  * Reduces a piece of LaTeX to just its prose, removing comments, commands,
  * mathematics and verbatim blocks. This shared step backs both the word and
  * the character counts.
@@ -66,54 +77,63 @@ function stripComment(line) {
  *        the braces of text commands (such as `\section{...}`) is kept.
  * @param {boolean} [options.ignoreCommentEnvironment=false]  When true, the
  *        contents of `\begin{comment}...\end{comment}` blocks are removed.
+ * @param {boolean} [options.preserveOffsets=false]  When true, everything that
+ *        is removed is padded with spaces instead of collapsed, so that every
+ *        surviving character keeps its original offset in `text`. Needed to map
+ *        a word back to a position in the document.
  * @returns {string}
  */
 function cleanLatex(text, options = {}) {
   const countBraced = options.countBracedArguments !== false;
+  // What removed text is replaced with: same-length padding, or a single space.
+  const gap = options.preserveOffsets ? blank : ' ';
 
-  // 1. Remove comments line by line.
-  let cleaned = text
-    .split(/\r?\n/)
-    .map(stripComment)
-    .join('\n');
+  // 1. Remove comments line by line. Working line by line with a regex (rather
+  //    than split/join) leaves the line terminators, CRLF included, untouched.
+  let cleaned = text.replace(/[^\r\n]+/g, (line) => {
+    const kept = stripComment(line);
+    return options.preserveOffsets
+      ? kept + ' '.repeat(line.length - kept.length)
+      : kept;
+  });
 
   // 1b. Optionally remove `comment` environments (from the `comment` package).
   if (options.ignoreCommentEnvironment) {
     cleaned = cleaned.replace(
       /\\begin\{comment\}[\s\S]*?\\end\{comment\}/g,
-      ' '
+      gap
     );
   }
 
   // 2. Remove verbatim and code environments (their contents are not words).
   cleaned = cleaned.replace(
     /\\begin\{(verbatim\*?|lstlisting|minted|Verbatim)\}[\s\S]*?\\end\{\1\}/g,
-    ' '
+    gap
   );
 
   // 3. Remove display and inline mathematics.
-  cleaned = cleaned.replace(/\$\$[\s\S]*?\$\$/g, ' ');
-  cleaned = cleaned.replace(/\\\[[\s\S]*?\\\]/g, ' ');
-  cleaned = cleaned.replace(/\\\([\s\S]*?\\\)/g, ' ');
-  cleaned = cleaned.replace(/(?<!\\)\$[^$]*\$/g, ' ');
+  cleaned = cleaned.replace(/\$\$[\s\S]*?\$\$/g, gap);
+  cleaned = cleaned.replace(/\\\[[\s\S]*?\\\]/g, gap);
+  cleaned = cleaned.replace(/\\\([\s\S]*?\\\)/g, gap);
+  cleaned = cleaned.replace(/(?<!\\)\$[^$]*\$/g, gap);
 
   // 4. Remove non-text commands together with their braced argument
   //    (\usepackage{...}, \begin{...}, \label{...}, \cite{...}, …).
-  cleaned = cleaned.replace(DROP_WITH_ARG_RE, ' ');
+  cleaned = cleaned.replace(DROP_WITH_ARG_RE, gap);
 
   // 5. Remove any remaining commands and their optional argument, keeping the
   //    braces so that text commands such as \section{...} or \textbf{...}
   //    retain their contents.
-  cleaned = cleaned.replace(/\\[a-zA-Z@]+\*?\s*(?:\[[^\]]*\])?/g, ' ');
+  cleaned = cleaned.replace(/\\[a-zA-Z@]+\*?\s*(?:\[[^\]]*\])?/g, gap);
 
   // 6. Remove single-character escaped symbols: \%, \&, \_, \\, \{, \}, etc.
-  cleaned = cleaned.replace(/\\[^a-zA-Z@]/g, ' ');
+  cleaned = cleaned.replace(/\\[^a-zA-Z@]/g, gap);
 
   // 7. Braces: either keep their contents or drop them entirely.
   if (countBraced) {
     cleaned = cleaned.replace(/[{}]/g, ' ');
   } else {
-    cleaned = cleaned.replace(/\{[^{}]*\}/g, ' ');
+    cleaned = cleaned.replace(/\{[^{}]*\}/g, gap);
     cleaned = cleaned.replace(/[{}]/g, ' ');
   }
 
@@ -122,6 +142,9 @@ function cleanLatex(text, options = {}) {
 
   return cleaned;
 }
+
+/** A word: a run starting with a letter or digit. */
+const WORD_SOURCE = "[\\p{L}\\p{N}][\\p{L}\\p{N}'’-]*";
 
 /**
  * Counts the words in a piece of LaTeX, ignoring comments and commands.
@@ -161,4 +184,46 @@ function analyse(text, options = {}) {
   };
 }
 
-module.exports = { countWords, countCharacters, analyse, cleanLatex, stripComment };
+/**
+ * Finds where the running word count reaches each multiple of `interval`.
+ *
+ * Each milestone reports the offset *in the original text* just after the last
+ * character of the word that reached it, so a caller can turn it into an editor
+ * position. Words are located in the cleaned text, which is padded to keep the
+ * original offsets (see {@link cleanLatex}).
+ *
+ * @param {string} text
+ * @param {number} interval   Words between milestones (250, 500, …).
+ * @param {object} [options]  See {@link cleanLatex}.
+ * @returns {Array<{ count: number, offset: number }>}
+ */
+function wordMilestones(text, interval, options = {}) {
+  const milestones = [];
+  const step = Math.floor(interval);
+  if (!Number.isFinite(step) || step < 1) {
+    return milestones;
+  }
+
+  const re = new RegExp(WORD_SOURCE, 'gu');
+  const cleaned = cleanLatex(text, { ...options, preserveOffsets: true });
+  let count = 0;
+  let match;
+
+  while ((match = re.exec(cleaned)) !== null) {
+    count++;
+    if (count % step === 0) {
+      milestones.push({ count, offset: match.index + match[0].length });
+    }
+  }
+
+  return milestones;
+}
+
+module.exports = {
+  countWords,
+  countCharacters,
+  analyse,
+  cleanLatex,
+  stripComment,
+  wordMilestones,
+};

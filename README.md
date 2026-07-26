@@ -20,11 +20,62 @@ actually written.
   document count. (They are still counted if they fall inside a selection.)
 - Counts the text inside command braces (for example the title in
   `\section{Introduction}`). This can be turned off.
-- Click the status bar item, or run **TeX Word Count: Show Word Count** from
-  the Command Palette, to see the counts in a notification.
+- **Progress markers**: a faint, italic label at the end of the line where the
+  running word count reaches each multiple of 250 words (`· 250`, `· 500`, …),
+  so you can see how far into the text you are without leaving the page. The
+  interval is configurable, and the markers can be turned off.
+- Click the status bar item for a menu with the counts and the marker settings.
 
 The character count excludes spaces (a "characters without spaces" figure) and,
 like the word count, ignores commands and comments.
+
+## Progress markers
+
+Every 250 words (by default), a faint label appears at the end of the line where
+the count reaches that milestone:
+
+```
+Ut enim ad minim veniam, quis nostrud exercitation
+ullamco laboris nisi ut aliquip ex ea commodo.        · 250
+```
+
+The markers are drawn with the theme's CodeLens colour, faded, so they stay
+legible without competing with your text, and they always describe the whole
+document, so they do not move while you select text. They are decorations only:
+nothing is ever written to your `.tex` file.
+
+### Changing the interval
+
+Pick whichever route suits you; all of them write the same setting.
+
+**From the status bar** (quickest). Click the word count at the bottom right and
+choose **Set marker interval…**. Pick 100, 250, 500 or 1000 words, or
+**Custom…** to type any number. The same menu hides and shows the markers.
+
+**From the Command Palette.** `Cmd+Shift+P` (`Ctrl+Shift+P` on Windows/Linux),
+then:
+
+- **TeX Word Count: Set Progress Marker Interval** — the same picker as above.
+- **TeX Word Count: Toggle Progress Markers** — hide or show them.
+
+**From the Settings editor.** `Cmd+,` (`Ctrl+,`), search for `TeX Word Count`,
+and edit **Progress Markers: Interval**.
+
+**From `settings.json`.** Useful for a per-project value: put this in
+`.vscode/settings.json` inside the project (or in your user `settings.json` to
+apply everywhere).
+
+```json
+{
+  "texWordCount.progressMarkers.interval": 500,
+  "texWordCount.progressMarkers.enabled": true
+}
+```
+
+A project value wins over your global one, and the picker respects that: if the
+setting already has a value in the current workspace, the picker updates *that*
+value rather than your global default. Either way the markers redraw
+immediately — no reload needed.
 
 ## Settings
 
@@ -32,6 +83,8 @@ like the word count, ignores commands and comments.
 | --- | --- | --- |
 | `texWordCount.countBracedArguments` | `true` | Count the text inside command braces, such as `\section{...}`. |
 | `texWordCount.showCharacters` | `true` | Also show a character count alongside the word count. |
+| `texWordCount.progressMarkers.enabled` | `true` | Show the in-editor word-count milestones. |
+| `texWordCount.progressMarkers.interval` | `250` | Number of words between milestones. |
 
 ## Requirements
 

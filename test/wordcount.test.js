@@ -1,7 +1,14 @@
 'use strict';
 
 const assert = require('assert');
-const { countWords, countCharacters, analyse, stripComment } = require('../wordcount');
+const {
+  countWords,
+  countCharacters,
+  analyse,
+  cleanLatex,
+  stripComment,
+  wordMilestones,
+} = require('../wordcount');
 
 let passed = 0;
 let failed = 0;
@@ -123,6 +130,73 @@ test('keeps comment environment contents by default (selection mode)', () => {
 
 test('stripComment leaves escaped percent alone', () => {
   assert.strictEqual(stripComment('100\\% done % note'), '100\\% done ');
+});
+
+test('preserving offsets does not change the word count', () => {
+  const src = [
+    '\\documentclass[12pt]{article} % a comment',
+    '\\begin{document}',
+    'Hello there, $x + y$ brave \\textbf{new} world. % more',
+    '\\begin{verbatim}',
+    'code goes here',
+    '\\end{verbatim}',
+    'The \\href{http://example.com}{final words}.',
+    '\\end{document}',
+  ].join('\r\n');
+
+  const plain = cleanLatex(src).match(/[\p{L}\p{N}][\p{L}\p{N}'’-]*/gu) || [];
+  const padded =
+    cleanLatex(src, { preserveOffsets: true }).match(
+      /[\p{L}\p{N}][\p{L}\p{N}'’-]*/gu
+    ) || [];
+  assert.deepStrictEqual(padded, plain);
+});
+
+test('preserving offsets keeps every word at its original position', () => {
+  const src = '% ignored\n\\section{Alpha} beta $z$ \\cite{ref} gamma';
+  const padded = cleanLatex(src, { preserveOffsets: true });
+
+  assert.strictEqual(padded.length, src.length);
+  for (const word of ['Alpha', 'beta', 'gamma']) {
+    assert.strictEqual(
+      padded.indexOf(word),
+      src.indexOf(word),
+      `"${word}" moved`
+    );
+  }
+});
+
+test('milestones land just after the word that reaches them', () => {
+  const src = 'one two three four five six';
+  assert.deepStrictEqual(wordMilestones(src, 2), [
+    { count: 2, offset: 'one two'.length },
+    { count: 4, offset: 'one two three four'.length },
+    { count: 6, offset: src.length },
+  ]);
+});
+
+test('milestones skip removed material', () => {
+  const src = '% a comment line\nalpha beta \\label{x} gamma delta';
+  assert.deepStrictEqual(wordMilestones(src, 2), [
+    { count: 2, offset: src.indexOf('beta') + 'beta'.length },
+    { count: 4, offset: src.length },
+  ]);
+});
+
+test('milestones respect the comment environment option', () => {
+  const src = 'a b \\begin{comment} c d \\end{comment} e f';
+  assert.deepStrictEqual(
+    wordMilestones(src, 2, { ignoreCommentEnvironment: true }),
+    [
+      { count: 2, offset: 'a b'.length },
+      { count: 4, offset: src.length },
+    ]
+  );
+});
+
+test('milestones are empty for an invalid interval', () => {
+  assert.deepStrictEqual(wordMilestones('one two three', 0), []);
+  assert.deepStrictEqual(wordMilestones('one two three', NaN), []);
 });
 
 console.log(`\n${passed} passed, ${failed} failed`);

@@ -1,5 +1,19 @@
 # Change Log
 
+## 0.4.0
+
+- Added in-editor progress markers: a faint label at the end of the line where
+  the running word count reaches each milestone (every 250 words by default).
+- Added `texWordCount.progressMarkers.enabled` and
+  `texWordCount.progressMarkers.interval` settings.
+- Added **TeX Word Count: Set Progress Marker Interval** (a picker with 100,
+  250, 500, 1000 or a custom number) and **TeX Word Count: Toggle Progress
+  Markers**. Both respect a per-workspace value of the setting when there is
+  one.
+- Clicking the status bar item now opens a menu with the word count and the
+  marker settings; the count on its own is still available as **TeX Word Count:
+  Show Word Count**.
+
 ## 0.3.0
 
 - Ignore the contents of `\begin{comment}...\end{comment}` blocks in the
