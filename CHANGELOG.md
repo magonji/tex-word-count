@@ -1,5 +1,16 @@
 # Change Log
 
+## 0.4.2
+
+- Changing a setting from the status bar menu no longer fails with a bare
+  "Unable to write into user settings" from VS Code. The extension now says
+  which settings file could not be written and why (usually a JSON error in it),
+  and offers to open that file.
+
+## 0.4.1
+
+- Updated the extension icon.
+
 ## 0.4.0
 
 - Added in-editor progress markers: a faint label at the end of the line where

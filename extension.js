@@ -177,13 +177,28 @@ function showCount() {
 }
 
 /**
+ * Where each configuration target keeps its JSON file, and the command that
+ * opens it. Used to point the user at the right file when a write fails.
+ */
+const SETTINGS_FILE = new Map([
+  [vscode.ConfigurationTarget.Global, ['user settings', 'workbench.action.openSettingsJson']],
+  [vscode.ConfigurationTarget.Workspace, ['workspace settings', 'workbench.action.openWorkspaceSettingsFile']],
+  [vscode.ConfigurationTarget.WorkspaceFolder, ['folder settings', 'workbench.action.openFolderSettingsFile']],
+]);
+
+/**
  * Writes a setting back where the user already keeps it: if it has a value in
  * the workspace (or folder), that is the one updated, so a per-project choice
  * is not silently overridden by a global one. Otherwise the global value is
  * used, which is also the case when no folder is open.
  *
+ * VS Code refuses to write a settings file that it cannot parse, and the error
+ * it raises does not say which file is at fault, so failures are reported here
+ * with a way to open the offending file.
+ *
  * @param {string} key    Setting name, without the `texWordCount.` prefix.
  * @param {any} value
+ * @returns {Promise<boolean>} Whether the setting was stored.
  */
 async function updateSetting(key, value) {
   const config = vscode.workspace.getConfiguration('texWordCount');
@@ -196,7 +211,23 @@ async function updateSetting(key, value) {
     target = vscode.ConfigurationTarget.Workspace;
   }
 
-  await config.update(key, value, target);
+  try {
+    await config.update(key, value, target);
+    return true;
+  } catch (error) {
+    const [name, command] = SETTINGS_FILE.get(target);
+    const open = 'Open Settings (JSON)';
+    const choice = await vscode.window.showErrorMessage(
+      `TeX Word Count could not save its setting: your ${name} file could not be ` +
+        'updated, usually because it contains a JSON error. Open it, fix the ' +
+        'problem reported there, and try again.',
+      open
+    );
+    if (choice === open) {
+      await vscode.commands.executeCommand(command);
+    }
+    return false;
+  }
 }
 
 /**
@@ -240,9 +271,10 @@ async function setMarkerInterval() {
     interval = Number(typed);
   }
 
-  await updateSetting('progressMarkers.interval', interval);
+  const stored = await updateSetting('progressMarkers.interval', interval);
   // Turning the interval up or down is a good sign the user wants to see them.
-  if (!getOptions().markersEnabled) {
+  // A second write is pointless (and a second error) if the first one failed.
+  if (stored && !getOptions().markersEnabled) {
     await updateSetting('progressMarkers.enabled', true);
   }
 }
