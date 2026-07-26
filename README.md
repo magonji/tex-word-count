@@ -96,6 +96,7 @@ extension such as **LaTeX Workshop** is recommended but not required.
 
 ```bash
 npm test        # run the word-counting unit tests
+npx @vscode/vsce package # prepare the package
 ```
 
 Press `F5` in VS Code to launch an Extension Development Host and try the
