@@ -37,6 +37,24 @@ test('keeps escaped percent signs', () => {
   assert.strictEqual(countWords('a 50\\% increase'), 3);
 });
 
+test('treats an escaped ampersand directly between two words as one connected word (e.g. used for names)', () => {
+  assert.strictEqual(countWords('Miller\\&Miller'), 1);
+});
+
+test('keeps an escaped ampersand surrounded by spaces as two words', () => {
+  assert.strictEqual(countWords('Miller \\& Miller'), 2);
+});
+
+test('treats a raw ampersand as a separator', () => {
+  assert.strictEqual(countWords('Miller&Miller'), 2);
+});
+
+test('does not join an escaped ampersand that follows a command name', () => {
+  assert.strictEqual(countWords('\\LaTeX\\&Co'), 1);
+});
+
+
+
 test('does not count commands', () => {
   assert.strictEqual(countWords('\\textbf hello'), 1);
 });
@@ -180,6 +198,13 @@ test('milestones skip removed material', () => {
   assert.deepStrictEqual(wordMilestones(src, 2), [
     { count: 2, offset: src.indexOf('beta') + 'beta'.length },
     { count: 4, offset: src.length },
+  ]);
+});
+
+test('milestones keep the offsets of a word joined by an escaped ampersand', () => {
+  const src = 'one Miller\\&Miller two';
+  assert.deepStrictEqual(wordMilestones(src, 2), [
+    { count: 2, offset: 'one Miller\\&Miller'.length },
   ]);
 });
 

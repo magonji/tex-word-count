@@ -1,5 +1,9 @@
 # Change Log
 
+## PR-Unreleased
+
+- An escaped ampersand directly between two words (as in `Miller\&Miller`) no longer splits them: the pair now counts as one word.
+
 ## 0.4.2
 
 - Changing a setting from the status bar menu no longer fails with a bare

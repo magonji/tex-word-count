@@ -67,6 +67,27 @@ function blank(match) {
 }
 
 /**
+ * Joins the two words around an escaped ampersand into one word when the
+ * ampersand sits directly between two letters or digits, as in 'Miller\&Miller'
+ * or 'AT\&T'. An ampersand next to whitespace or a command name is left alone.
+ * 
+ * Without 'preserveOffsets' the '\&' is simply removed. With it, the two 
+ * characters are replaced by two filler letters, so that the word stays in one 
+ * piece and every later character keeps its original offset.
+ * 
+ * @param {string} text  The LaTeX text to process.
+ * @param {boolean} [preserveOffsets=false]  Whether the length of the text has to stay the same.
+ * @returns {string}
+ */
+function joinEscapedAmpersands(text, preserveOffsets = false) {
+  const filler = preserveOffsets ? 'xx' : '';
+  return text.replace(
+    /(?<=[\p{L}\p{N}])(?<!\\[a-zA-Z@]+)\\&(?=[\p{L}\p{N}])/gu,
+    filler
+  );
+}
+
+/**
  * Reduces a piece of LaTeX to just its prose, removing comments, commands,
  * mathematics and verbatim blocks. This shared step backs both the word and
  * the character counts.
@@ -80,7 +101,9 @@ function blank(match) {
  * @param {boolean} [options.preserveOffsets=false]  When true, everything that
  *        is removed is padded with spaces instead of collapsed, so that every
  *        surviving character keeps its original offset in `text`. Needed to map
- *        a word back to a position in the document.
+ *        a word back to a position in the document. Escaped ampersands between
+ *        two words are the exception: they are padded with letters, so that the
+ *        word stays in one piece.
  * @returns {string}
  */
 function cleanLatex(text, options = {}) {
@@ -120,6 +143,8 @@ function cleanLatex(text, options = {}) {
   // 4. Remove non-text commands together with their braced argument
   //    (\usepackage{...}, \begin{...}, \label{...}, \cite{...}, …).
   cleaned = cleaned.replace(DROP_WITH_ARG_RE, gap);
+
+  cleaned = joinEscapedAmpersands(cleaned, options.preserveOffsets);
 
   // 5. Remove any remaining commands and their optional argument, keeping the
   //    braces so that text commands such as \section{...} or \textbf{...}
